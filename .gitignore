@@ -1,0 +1,22 @@
+# ワーカーの実行ログ
+logs/
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 環境変数・秘密情報
+.env
+.env.*
+!.env.example
+
+# 言語別(必要に応じて調整)
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+target/

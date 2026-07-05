@@ -56,27 +56,10 @@
 | `tester` | テストの作成・実行・失敗解析 |
 | `reviewer` | 差分レビュー(コード修正禁止) |
 
-### A. セッション内で委譲(既定)
-
 該当するカスタムエージェントに委譲する。委譲時のプロンプトには「`tasks/T###-*.md` を読んで実行せよ」とタスクファイルのパスを渡す。
 
 - 実装は必ず `implementer` に、テストは `tester` に、レビューは `reviewer` に委譲する。**自分で直接実装しない。**
 - 独立したタスクは並列で委譲してよい(同一ファイルを触るタスクは直列にする)。
-
-### B. 別プロセスで委譲(バッチ / 独立性の高いタスク)
-
-`copilot` を非対話モードで起動して丸ごと任せる。独立性が高く 1 発で完結しやすいタスク(新規ファイル中心、既存コードへの依存が少ない)に向く。
-
-```powershell
-./scripts/copilot-task.ps1 tasks/T###-*.md                    # Windows(既定: implementer)
-./scripts/copilot-task.ps1 tasks/T###-*.md -Agent tester      # エージェント指定
-```
-```sh
-./scripts/copilot-task.sh tasks/T###-*.md            # macOS/Linux
-./scripts/copilot-task.sh tasks/T###-*.md tester     # エージェント指定
-```
-
-実行ログは `logs/copilot-T###-*.log` に残る。完了後の検証はセッション内委譲の場合と同じ。
 
 ## 進捗管理ルール(必須)
 

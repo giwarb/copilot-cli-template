@@ -2,7 +2,7 @@
 
 GitHub Copilot CLI で **上位モデルを「戦略役(オーケストレーター)」**、**安価なモデルのカスタムエージェントを「実働役(ワーカー)」** として使い分けるための開発テンプレートです。
 
-高価な上位モデル(Claude Opus 4.6 など)は計画・指示・検証・意思決定だけに使い、コードを書く・テストする・レビューするといったトークンを大量に消費する作業は単価の安いモデル(既定: Claude Sonnet 5)のエージェントに任せることで、**AI クレジットの消費を抑えながら品質を保つ**ことを狙います(GitHub Copilot は 2026 年 6 月から全プランがトークンベースの AI クレジット課金です。年額の旧プラン継続中のみプレミアムリクエスト)。
+高価な上位モデル(Claude Opus 4.6 など)は計画・指示・検証・意思決定だけに使い、コードを書く・テストする・レビューするといったトークンを大量に消費する作業は単価の安いモデル(既定: GPT-5.3-Codex)のエージェントに任せることで、**AI クレジットの消費を抑えながら品質を保つ**ことを狙います(GitHub Copilot は 2026 年 6 月から全プランがトークンベースの AI クレジット課金です。年額の旧プラン継続中のみプレミアムリクエスト)。
 
 Copilot が標準で認識する仕組み(`AGENTS.md`、`.github/agents/*.agent.md`)だけで構成しているため、**Copilot CLI でも VS Code + GitHub Copilot でも同じ設定がそのまま使えます**。VS Code 専用機能は使っていません。
 
@@ -58,27 +58,6 @@ flowchart TD
 
 - **`tasks/STATUS.md`** — 全タスクの一覧ボード。オーケストレーターが状態遷移のたびに更新します。これを開いておけば今どこまで進んでいるかが一目で分かります。
 - **`tasks/T###-*.md`** — タスクごとの仕様書 + 作業ログ。担当エージェントが末尾の「作業ログ」に追記していくので、経緯を後から追えます。
-- **`logs/`** — 別プロセス委譲した場合の実行ログ(git 管理外)。
-
-## 別プロセスでワーカーを走らせる
-
-セッション内での委譲のほかに、非対話モードの `copilot` を別プロセスで起動してタスクを丸ごと任せられます。独立性の高いタスクのバッチ実行や、オーケストレーターのコンテキストを消費したくない大きめの作業に向きます。
-
-```powershell
-# Windows
-./scripts/copilot-task.ps1 tasks/T001-add-login.md
-./scripts/copilot-task.ps1 tasks/T002-add-tests.md -Agent tester
-```
-
-```sh
-# macOS / Linux
-./scripts/copilot-task.sh tasks/T001-add-login.md
-./scripts/copilot-task.sh tasks/T002-add-tests.md tester
-```
-
-`copilot --agent <name> -p "..." --allow-all` で非対話実行し、ログを `logs/` に保存します。
-
-> **注意**: `--allow-all` は確認なしでツール実行を許可します。信頼できるリポジトリでのみ使用してください。古いバージョンの Copilot CLI ではフラグ名が `--allow-all-tools` です。
 
 ## リポジトリ構成
 
@@ -91,18 +70,14 @@ flowchart TD
 │       ├── implementer.agent.md  # 実装担当(安価モデル)
 │       ├── tester.agent.md       # テスト担当(安価モデル)
 │       └── reviewer.agent.md     # レビュー担当(安価モデル・read/search/shell のみ)
-├── tasks/
-│   ├── STATUS.md          # 進捗ボード
-│   └── _template.md       # タスク仕様のテンプレート
-├── scripts/
-│   ├── copilot-task.ps1   # 非対話モードでワーカーに委譲(Windows)
-│   └── copilot-task.sh    # 非対話モードでワーカーに委譲(macOS/Linux)
-└── logs/                  # ワーカーの実行ログ(git 管理外)
+└── tasks/
+    ├── STATUS.md          # 進捗ボード
+    └── _template.md       # タスク仕様のテンプレート
 ```
 
 ## カスタマイズ
 
-- **ワーカーのモデル変更** — `.github/agents/*.agent.md` の frontmatter `model:` を編集します。既定は `claude-sonnet-5`(Opus 4.6 の約 1/2.5 の単価で性能はフラッグシップ級。さらに節約したい場合は `gpt-5-mini` や `claude-haiku-4.5` へ)。利用可能なモデル ID は Copilot CLI の `/model` 一覧で確認してください。指定したモデルがプランで使えない場合は `model:` 行を削除すればセッションのモデルが使われます。
+- **ワーカーのモデル変更** — `.github/agents/*.agent.md` の frontmatter `model:` を編集します。既定は `gpt-5.3-codex`(さらに節約したい場合は `gpt-5-mini` や `claude-haiku-4.5` へ)。利用可能なモデル ID は Copilot CLI の `/model` 一覧で確認してください。指定したモデルがプランで使えない場合は `model:` 行を削除すればセッションのモデルが使われます。
 - **Auto モデル選択(10% 割引)を使う** — frontmatter の `model:` に `auto` を指定する方法は現時点で文書化されていません。Auto を使いたい場合は各エージェントの `model:` 行を削除し、セッションのモデルを `/model` で Auto にしてください(`model:` 未指定のエージェントはセッションのモデルを継承します)。この場合オーケストレーターも Auto になる点に注意。
 - **エージェントの追加** — `.github/agents/<名前>.agent.md` を追加するだけです。調査・要約専用のエージェントを追加するのも効果的です。
 - **ユーザー単位のエージェント** — リポジトリ横断で使いたい場合は `~/.copilot/agents/` に置けます(同名ならホーム側が優先)。

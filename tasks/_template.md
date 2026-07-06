@@ -2,7 +2,7 @@
 id: T000
 title: (タスク名)
 status: todo        # todo | in_progress | review | redo | done | blocked
-assignee: implementer  # implementer | tester | reviewer
+assignee: implementer  # implementer | tester | verifier | reviewer
 attempts: 0
 ---
 

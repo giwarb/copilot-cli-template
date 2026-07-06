@@ -11,23 +11,27 @@ Copilot が標準で認識する仕組み(`AGENTS.md`、`.github/agents/*.agent.
 ```mermaid
 flowchart TD
     U[ユーザー] -->|開発依頼| O[上位モデル<br>オーケストレーター]
+    O -->|調査依頼・並列可| E[explorer<br>安価モデル]
+    E -->|要約レポート| O
     O -->|タスク仕様を書く| T[tasks/T###-*.md]
     T --> I[implementer<br>安価モデル]
     T --> TE[tester<br>安価モデル]
     I & TE -->|成果物 + レポート| O
+    O -->|受け入れ基準の検証依頼| VE[verifier<br>安価モデル]
     O -->|差分レビュー依頼| R[reviewer<br>安価モデル]
-    R -->|指摘レポート| O
-    O -->|受け入れ基準を検証| V{OK?}
+    VE & R -->|判定・指摘レポート| V{OK?}
     V -->|NG: フィードバック付きで再委譲| T
     V -->|OK| D[完了 / STATUS.md 更新]
 ```
 
 | 役割 | モデル | やること | やらないこと |
 |---|---|---|---|
-| オーケストレーター | 上位モデル(セッションで選択) | 要件整理、タスク分解、仕様書作成、結果検証、やり直し判断、進捗管理 | 実装・テスト・詳細レビューを自分でやらない |
+| オーケストレーター | 上位モデル(セッションで選択) | 要件整理、タスク分解、仕様書作成、やり直し判断、進捗管理 | 調査・実装・テスト・検証・詳細レビューを自分でやらない |
+| explorer | 安価モデル(read/search/execute のみ) | コードベースの調査・影響範囲の特定(**並列委譲可**) | ファイルの修正 |
 | implementer | 安価モデル(`.github/agents/` で固定) | タスク仕様に沿った実装 | 仕様外の変更、勝手な設計判断 |
 | tester | 安価モデル | テスト作成・実行・失敗解析 | プロダクションコードの書き換え |
-| reviewer | 安価モデル(read/search/shell のみ) | 差分レビュー、指摘レポート | コードの修正 |
+| verifier | 安価モデル(read/search/execute のみ) | 受け入れ基準のコマンド実行・合否判定 | コード・テストの修正 |
+| reviewer | 安価モデル(read/search/execute のみ) | 差分レビュー、指摘レポート | コードの修正 |
 
 ## クイックスタート
 
@@ -52,7 +56,7 @@ flowchart TD
 
 ### VS Code + GitHub Copilot で使う場合
 
-同じリポジトリをそのまま VS Code で開けば、`AGENTS.md` と `.github/agents/` のカスタムエージェントが Copilot Chat からも利用できます(エージェントピッカーに implementer / tester / reviewer が表示されます)。運用は Copilot CLI の場合と同じです。
+同じリポジトリをそのまま VS Code で開けば、`AGENTS.md` と `.github/agents/` のカスタムエージェントが Copilot Chat からも利用できます(エージェントピッカーに explorer / implementer / tester / verifier / reviewer が表示されます)。運用は Copilot CLI の場合と同じです。
 
 ## 進捗の見える化
 
@@ -67,9 +71,11 @@ flowchart TD
 ├── README.md
 ├── .github/
 │   └── agents/
+│       ├── explorer.agent.md     # 調査担当(安価モデル・read/search/execute のみ・並列委譲可)
 │       ├── implementer.agent.md  # 実装担当(安価モデル)
 │       ├── tester.agent.md       # テスト担当(安価モデル)
-│       └── reviewer.agent.md     # レビュー担当(安価モデル・read/search/shell のみ)
+│       ├── verifier.agent.md     # 受け入れ検証担当(安価モデル・read/search/execute のみ)
+│       └── reviewer.agent.md     # レビュー担当(安価モデル・read/search/execute のみ)
 └── tasks/
     ├── STATUS.md          # 進捗ボード
     └── _template.md       # タスク仕様のテンプレート
@@ -77,9 +83,9 @@ flowchart TD
 
 ## カスタマイズ
 
-- **ワーカーのモデル変更** — `.github/agents/*.agent.md` の frontmatter `model:` を編集します。既定は `gpt-5.3-codex`(さらに節約したい場合は `gpt-5-mini` や `claude-haiku-4.5` へ)。利用可能なモデル ID は Copilot CLI の `/model` 一覧で確認してください。指定したモデルがプランで使えない場合は `model:` 行を削除すればセッションのモデルが使われます。
+- **ワーカーのモデル変更** — `.github/agents/*.agent.md` の frontmatter `model:` を編集します。既定は `GPT-5.3-Codex`(さらに節約したい場合は `gpt-5-mini` や `claude-haiku-4.5` へ)。利用可能なモデル ID は Copilot CLI の `/model` 一覧で確認してください。指定したモデルがプランで使えない場合は `model:` 行を削除すればセッションのモデルが使われます。
 - **Auto モデル選択(10% 割引)を使う** — frontmatter の `model:` に `auto` を指定する方法は現時点で文書化されていません。Auto を使いたい場合は各エージェントの `model:` 行を削除し、セッションのモデルを `/model` で Auto にしてください(`model:` 未指定のエージェントはセッションのモデルを継承します)。この場合オーケストレーターも Auto になる点に注意。
-- **エージェントの追加** — `.github/agents/<名前>.agent.md` を追加するだけです。調査・要約専用のエージェントを追加するのも効果的です。
+- **エージェントの追加** — `.github/agents/<名前>.agent.md` を追加するだけです。ドキュメント作成専用などプロジェクトに合わせた役割を足せます。
 - **ユーザー単位のエージェント** — リポジトリ横断で使いたい場合は `~/.copilot/agents/` に置けます(同名ならホーム側が優先)。
 - 言語・フレームワーク固有のビルド/テストコマンドが決まったら、`AGENTS.md` の「プロジェクト固有情報」セクションに追記してください。
 

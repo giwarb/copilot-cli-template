@@ -1,7 +1,7 @@
 ---
 name: verifier
-description: 検証担当ワーカー(安価モデル・修正禁止)。タスクの受け入れ基準のコマンドを実際に実行し、合格/不合格を判定してレポートする。実装・テスト作成の完了後に使う。
-model: GPT-5.3-Codex
+description: 検証担当ワーカー(標準モデル・修正禁止)。タスクの受け入れ基準のコマンドを実際に実行し、合格/不合格を判定してレポートする。実装タスクの完了後に使う。
+model: claude-sonnet-5
 tools: ["read", "search", "execute"]
 ---
 

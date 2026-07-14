@@ -2,7 +2,7 @@
 id: T000
 title: (タスク名)
 status: todo        # todo | in_progress | review | redo | done | blocked
-assignee: implementer  # implementer | tester | verifier | reviewer
+assignee: implementer  # implementer | senior-implementer | verifier | reviewer(難易度判定は AGENTS.md 参照)
 attempts: 0
 ---
 
@@ -23,6 +23,11 @@ attempts: 0
 
 ## やらないこと(スコープ外)
 - (このタスクで触ってはいけない範囲・やらなくてよいこと)
+
+## テスト観点(実装タスクでは必須)
+- 正常系: (最低限カバーすべきケース)
+- 異常系: (エラー・不正入力など)
+- 境界値: (0 件・上限・空文字など)
 
 ## 受け入れ基準(検証コマンド)
 - [ ] `(コマンド)` が (期待結果) になる
